@@ -6,5 +6,4 @@ main.js
 *.map
 data.json
 .DS_Store
-dic/*
-!dic/en/
+dic/

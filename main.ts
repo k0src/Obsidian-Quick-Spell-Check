@@ -17,6 +17,14 @@ export default class SelectSpellCheckPlugin extends Plugin {
 	async onload() {
 		await this.loadSettings();
 		this.dictionaryManager = new DictionaryManager(this);
+
+		const enDictionaryInstalled =
+			await this.dictionaryManager.isDictionaryInstalled("en");
+		if (!enDictionaryInstalled) {
+			new Notice("Quick Spell Check: Downloading English dictionary...");
+			await this.dictionaryManager.downloadDictionary("English", "en");
+		}
+
 		await this.loadDictionary();
 
 		this.spellChecker = new SpellChecker(this);
