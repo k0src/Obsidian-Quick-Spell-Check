@@ -1,0 +1,10 @@
+{
+	"id": "select-spell-check",
+	"name": "Select Spell Check",
+	"version": "0.0.1",
+	"minAppVersion": "0.15.0",
+	"description": "Open and auto-select spell check suggestions.",
+	"author": "k0src",
+	"authorUrl": "https://github.com/k0src",
+	"isDesktopOnly": false
+}
