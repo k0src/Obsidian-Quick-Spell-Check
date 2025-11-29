@@ -10,6 +10,7 @@ jobs:
         runs-on: ubuntu-latest
         permissions:
             contents: write
+
         steps:
             - uses: actions/checkout@v3
 
@@ -30,6 +31,9 @@ jobs:
                   tag="${GITHUB_REF#refs/tags/}"
 
                   gh release create "$tag" \
-                    --title="$tag" \
+                    --title "$tag" \
                     --draft \
-                    main.js manifest.json styles.css dic/en/index.aff dic/en/index.dic
+                    main.js \
+                    manifest.json \
+                    styles.css \
+                    dic/en
