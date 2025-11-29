@@ -23,7 +23,7 @@ jobs:
                   npm install
                   npm run build
 
-            - name: Create release
+            - name: Create release with files
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
               run: |
@@ -32,4 +32,13 @@ jobs:
                   gh release create "$tag" \
                     --title="$tag" \
                     --draft \
-                    main.js manifest.json styles.css dic/en/index.aff dic/en/index.dic
+                    main.js manifest.json styles.css
+
+                  mkdir -p upload-temp/dic/en
+                  cp dic/en/index.aff upload-temp/dic/en/
+                  cp dic/en/index.dic upload-temp/dic/en/
+
+                  cd upload-temp
+                  find dic -type f | while read file; do
+                    gh release upload "$tag" "$file"
+                  done
