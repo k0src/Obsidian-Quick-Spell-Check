@@ -43,6 +43,8 @@ _Coming soon_
 
 Spell checking powered by [nspell](https://github.com/wooorm/nspell).
 
+Dictionaries are downloaded from [wooorm/dictionaries](https://github.com/wooorm/dictionaries").
+
 ## License
 
 [LICENSE](LICENSE)
