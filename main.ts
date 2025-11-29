@@ -19,10 +19,12 @@ interface MisspelledWord {
 
 interface SelectSpellCheckSettings {
 	customDictionary: string;
+	enableNumberKeySelection: boolean;
 }
 
 const DEFAULT_SETTINGS: SelectSpellCheckSettings = {
 	customDictionary: "",
+	enableNumberKeySelection: true,
 };
 
 export default class SelectSpellCheckPlugin extends Plugin {
@@ -338,29 +340,34 @@ export default class SelectSpellCheckPlugin extends Plugin {
 		const menu = new Menu();
 		this.currentMenu = menu;
 
-		suggestions.slice(0, 10).forEach((suggestion) => {
+		const applySuggestion = (suggestion: string) => {
+			const savedCursor = editor.getCursor();
+			editor.replaceRange(
+				suggestion,
+				misspelledWord.from,
+				misspelledWord.to
+			);
+
+			if (
+				savedCursor.line === misspelledWord.from.line &&
+				savedCursor.ch > misspelledWord.from.ch
+			) {
+				const lengthDiff =
+					suggestion.length - misspelledWord.word.length;
+				editor.setCursor({
+					line: savedCursor.line,
+					ch: savedCursor.ch + lengthDiff,
+				});
+			} else {
+				editor.setCursor(savedCursor);
+			}
+		};
+
+		const topSuggestions = suggestions.slice(0, 10);
+		topSuggestions.forEach((suggestion) => {
 			menu.addItem((item) => {
 				item.setTitle(suggestion).onClick(() => {
-					const savedCursor = editor.getCursor();
-					editor.replaceRange(
-						suggestion,
-						misspelledWord.from,
-						misspelledWord.to
-					);
-
-					if (
-						savedCursor.line === misspelledWord.from.line &&
-						savedCursor.ch > misspelledWord.from.ch
-					) {
-						const lengthDiff =
-							suggestion.length - misspelledWord.word.length;
-						editor.setCursor({
-							line: savedCursor.line,
-							ch: savedCursor.ch + lengthDiff,
-						});
-					} else {
-						editor.setCursor(savedCursor);
-					}
+					applySuggestion(suggestion);
 				});
 			});
 		});
@@ -389,7 +396,39 @@ export default class SelectSpellCheckPlugin extends Plugin {
 				});
 		});
 
+		const keyHandler = (e: KeyboardEvent) => {
+			const navigationKeys = [
+				"ArrowUp",
+				"ArrowDown",
+				"ArrowLeft",
+				"ArrowRight",
+				"Enter",
+				"Escape",
+				"Tab",
+			];
+
+			const isNumberKey = /^[0-9]$/.test(e.key);
+
+			if (isNumberKey && this.settings.enableNumberKeySelection) {
+				e.preventDefault();
+				e.stopPropagation();
+
+				const num = e.key === "0" ? 10 : parseInt(e.key);
+				const index = num - 1;
+
+				if (index < topSuggestions.length) {
+					applySuggestion(topSuggestions[index]);
+					menu.hide();
+				}
+			} else if (!navigationKeys.includes(e.key)) {
+				menu.hide();
+			}
+		};
+
+		document.addEventListener("keydown", keyHandler);
+
 		menu.onHide(() => {
+			document.removeEventListener("keydown", keyHandler);
 			this.currentMenu = null;
 		});
 
@@ -441,6 +480,18 @@ class SelectSpellCheckSettingTab extends PluginSettingTab {
 		const { containerEl } = this;
 
 		containerEl.empty();
+
+		new Setting(containerEl)
+			.setName("Enable number key selection")
+			.setDesc("Press 1-9 or 0 to quickly select suggestions.")
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.enableNumberKeySelection)
+					.onChange(async (value) => {
+						this.plugin.settings.enableNumberKeySelection = value;
+						await this.plugin.saveSettings();
+					})
+			);
 
 		new Setting(containerEl)
 			.setName("Custom dictionary")

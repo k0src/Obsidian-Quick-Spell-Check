@@ -1,7 +1,7 @@
 {
-	"id": "select-spell-check",
-	"name": "Select Spell Check",
-	"version": "0.0.1",
+	"id": "quick-spell-check",
+	"name": "Quick Spell Check",
+	"version": "0.0.2",
 	"minAppVersion": "0.15.0",
 	"description": "Open and auto-select spell check suggestions.",
 	"author": "k0src",
