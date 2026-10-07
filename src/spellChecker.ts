@@ -275,7 +275,10 @@ export class SpellChecker {
 			return;
 		}
 
-		const menu = new Menu();
+		// Native (Electron) menus grab the keyboard, which breaks number-key
+		// selection and the keydown handler below. Native menus are the
+		// default on macOS, so opt out explicitly.
+		const menu = new Menu().setUseNativeMenu(false);
 		this.currentMenu = menu;
 
 		const applySuggestion = (suggestion: string) => {
@@ -310,23 +313,18 @@ export class SpellChecker {
 					applySuggestion(suggestion);
 				});
 
-				// @ts-expect-error
-				const itemEl = item.dom as HTMLElement;
-				if (itemEl) {
-					itemEl.addClass("spell-check-item");
-
-					itemEl.empty();
-					const titleContainer = itemEl.createDiv("menu-item-title");
-					if (this.plugin.settings.enableNumberKeySelection) {
-						const numberSpan = titleContainer.createSpan(
-							"spell-check-suggestion-number"
-						);
-						numberSpan.textContent = `${number}`;
-					}
-
-					const textSpan = titleContainer.createSpan();
-					textSpan.textContent = suggestion;
+				// Set the title via the public API: replacing `item.dom`
+				// leaves `titleEl` empty, and native menus build their
+				// labels from `titleEl`, so the suggestions rendered blank.
+				const title = createFragment();
+				if (this.plugin.settings.enableNumberKeySelection) {
+					title.createSpan({
+						cls: "spell-check-suggestion-number",
+						text: `${number}`,
+					});
 				}
+				title.createSpan({ text: suggestion });
+				item.setTitle(title);
 			});
 		});
 
@@ -365,6 +363,9 @@ export class SpellChecker {
 				"Tab",
 			];
 
+			const modifierKeys = ["Shift", "Control", "Alt", "Meta"];
+			if (modifierKeys.includes(e.key)) return;
+
 			const isNumberKey = /^[0-9]$/.test(e.key);
 
 			if (isNumberKey && this.plugin.settings.enableNumberKeySelection) {
@@ -383,9 +384,15 @@ export class SpellChecker {
 			}
 		};
 
-		document.addEventListener("keydown", keyHandler);
+		// Defer registration: when triggered from a key sequence (e.g. vim
+		// `z=`), the triggering keydown is still bubbling to `document` and
+		// would otherwise immediately close the menu.
+		const registerTimeout = setTimeout(() => {
+			document.addEventListener("keydown", keyHandler);
+		}, 0);
 
 		menu.onHide(() => {
+			clearTimeout(registerTimeout);
 			document.removeEventListener("keydown", keyHandler);
 			this.currentMenu = null;
 		});
