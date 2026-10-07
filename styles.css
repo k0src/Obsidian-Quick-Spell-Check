@@ -9,11 +9,6 @@
 	text-align: right;
 }
 
-.menu .menu-item.spell-check-item {
-	display: flex;
-	align-items: center;
-}
-
 .dictionary-download-container {
 	display: flex;
 	flex-direction: column;
