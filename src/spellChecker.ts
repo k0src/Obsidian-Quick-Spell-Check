@@ -363,6 +363,9 @@ export class SpellChecker {
 				"Tab",
 			];
 
+			const modifierKeys = ["Shift", "Control", "Alt", "Meta"];
+			if (modifierKeys.includes(e.key)) return;
+
 			const isNumberKey = /^[0-9]$/.test(e.key);
 
 			if (isNumberKey && this.plugin.settings.enableNumberKeySelection) {
@@ -381,9 +384,15 @@ export class SpellChecker {
 			}
 		};
 
-		document.addEventListener("keydown", keyHandler);
+		// Defer registration: when triggered from a key sequence (e.g. vim
+		// `z=`), the triggering keydown is still bubbling to `document` and
+		// would otherwise immediately close the menu.
+		const registerTimeout = setTimeout(() => {
+			document.addEventListener("keydown", keyHandler);
+		}, 0);
 
 		menu.onHide(() => {
+			clearTimeout(registerTimeout);
 			document.removeEventListener("keydown", keyHandler);
 			this.currentMenu = null;
 		});
